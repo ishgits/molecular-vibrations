@@ -1,0 +1,19 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# macOS
+.DS_Store
+
+# Virtual environments
+venv/
+.venv/
+pyvista-env/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Temporary files
+*.log
