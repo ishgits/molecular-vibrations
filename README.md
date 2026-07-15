@@ -281,3 +281,6 @@ https://github.com/ashendeema
 ---
 
 If you find this project useful, consider giving it a ⭐ on GitHub.
+
+# molecular-vibration-png-generator
+Python tool for generating publication-quality 3D molecular vibration images from XYZ files using PyVista.
