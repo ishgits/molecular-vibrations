@@ -1,296 +1,202 @@
-# 3D Molecular Vibration PNG Generator
+# molvib — Molecular Vibration PNG Generator
 
-Fork of [ashendeema/molecular-vibration-png-generator](https://github.com/ashendeema/molecular-vibration-png-generator), maintained at [ishgits/molecular-vibrations](https://github.com/ishgits/molecular-vibrations). This fork adds a `molvib` package for Gaussian 16 frequency-log parsing, IR-intensity mode selection, and CSV manifest output.
+Publication-quality 3D renders of molecular vibrational modes, straight from
+**Gaussian 16 frequency logs** or **XYZ displacement files**.
 
-A Python tool for generating **publication-quality 3D molecular vibration images** from XYZ files containing atomic coordinates and vibrational displacement vectors.
+`molvib` reads a frequency calculation, picks the modes worth looking at (by IR
+intensity, by index, or every imaginary mode), and writes one high-resolution PNG
+per mode plus a tidy CSV manifest — from the command line or as an importable
+Python API.
 
-Developed by **Ashen Deemantha Liyanage**  
-**Zayak's Lab**  
-Department of Physics and Astronomy  
-Bowling Green State University (BGSU)
+<p align="center">
+  <img src="images/showcase_adenine_1653.png" width="46%" alt="Adenine ring mode at 1653 cm-1">
+  <img src="images/showcase_h2so4_ts.png" width="46%" alt="H2SO4 transition-state imaginary mode">
+</p>
+<p align="center">
+  <em>Left: adenine ring/NH₂ mode at 1653 cm⁻¹ (a minimum). Right: the −82 cm⁻¹
+  imaginary mode of an H₂SO₄ transition state — arrows trace the reaction coordinate.</em>
+</p>
 
----
-
-## Overview
-
-Visualizing molecular vibrational modes is an essential part of computational chemistry and materials science. This program automatically converts molecular vibration data stored in XYZ files into high-resolution PNG images suitable for:
-
-- Research publications
-- Conference presentations
-- Teaching materials
-- Molecular vibration analysis
-- Computational chemistry visualization
-
-The script automatically detects all XYZ files in the working directory, renders the molecular structure in 3D, draws vibrational displacement vectors, and saves a publication-quality PNG image for each molecule.
+> Fork of [ashendeema/molecular-vibration-png-generator](https://github.com/ashendeema/molecular-vibration-png-generator).
+> The original standalone XYZ script (`xyz_to_png.py`) is preserved unchanged; the
+> `molvib` package adds Gaussian-log parsing, mode selection, a manifest, and a CLI.
 
 ---
+
+## Why
+
+Gaussian prints normal modes as blocks of displacement vectors buried in a text
+log — one mode is not one file, geometry lives in a separate orientation table, and
+atoms are identified by atomic number. Visualizing a mode normally means loading the
+log into a GUI and screenshotting by hand. `molvib` turns that into a single
+reproducible command that a script or a cluster job can call, so a whole directory of
+logs becomes a folder of figures and a manifest you can filter.
 
 ## Features
 
-- Automatically detects all `.xyz` files in the current folder
-- Generates high-resolution PNG images
-- Publication-quality 3D rendering using PyVista
-- Automatic bond detection using covalent radii
-- Element-specific atom colors
-- Vibrational displacement vectors displayed as red arrows
-- Automatic extraction of vibrational frequency from the filename
-- Transparent or colored backgrounds
-- Adjustable rendering resolution
-- Customizable atom, bond, and arrow sizes
-- Suitable for DFT vibrational analysis
-
----
-
-## Example
-
-Input file:
-
-```
-m_165_3150.62.xyz
-```
-
-Output:
-
-```
-m_165_3150.62.png
-```
-
-The generated image contains:
-
-- Colored atoms
-- Chemical bonds
-- Vibrational displacement vectors
-- Vibrational frequency label
-
----
-
-## Input File Format
-
-Each XYZ file should contain one atom per line in the following format:
-
-```
-Element   X   Y   Z   Fx   Fy   Fz
-```
-
-Example:
-
-```
-C   0.000   0.000   0.000   0.12   0.03   0.00
-O   1.210   0.000   0.000  -0.10   0.02   0.01
-H  -0.620   0.930   0.000   0.03  -0.05   0.00
-```
-
-where
-
-- **X Y Z** = Atomic coordinates (Å)
-- **Fx Fy Fz** = Vibrational displacement vectors
-
-### Benzene
-
-![Benzene](images/m_20_1023.39.png)
+- Reads **Gaussian 16** frequency output (`.log` / `.out`) and **XYZ** displacement
+  files through one auto-detecting entry point.
+- **Standard-orientation frame matching** — geometry and displacements are taken from
+  the same reference frame, so arrows always point along the correct bonds.
+- Mode selection by **IR intensity**, by **explicit index**, or **all imaginary
+  modes** (retained regardless of intensity — the ones that matter for transition-state
+  validation).
+- Publication-quality PyVista rendering: element-colored atoms, covalent-radius bond
+  detection, displacement arrows, per-mode frequency label, transparent or colored
+  background, adjustable resolution.
+- **Fitted camera** — the full molecule and every arrow stay in frame.
+- **CSV manifest** mapping each PNG to its log, mode number, frequency, IR intensity,
+  and imaginary flag; invalid logs are routed to a separate bad-logs report instead of
+  aborting the run.
+- Importable API (`render_file`, `render_directory`, `read_any`, `select_modes`) for
+  notebook and pipeline use.
+- Full periodic table (H–Og) for colors and Cordero (2008) covalent radii.
 
 ---
 
 ## Installation
 
-### 1. Clone the repository
+Requires Python 3.9+.
 
 ```bash
 git clone https://github.com/ishgits/molecular-vibrations.git
-```
-
-### 2. Move into the project
-
-```bash
 cd molecular-vibrations
-```
-
-### 3. Install the required Python libraries
-
-```bash
 python -m pip install -e '.[test]'
 ```
 
----
-
-## Required Libraries
-
-- Python 3.9 or newer
-- NumPy
-- PyVista
-- VTK
+This installs `molvib` and its dependencies (NumPy, pandas, PyVista, VTK) and puts a
+`molvib` command on your path. On a headless Linux machine, run the rendering commands
+under `xvfb-run` (e.g. `xvfb-run -a molvib --input ...`).
 
 ---
 
-## How to Use
-
-Place one or more `.xyz` files in the same directory as the script.
-
-Run
+## Quick start
 
 ```bash
-python xyz_to_png.py
+# Render the IR-active modes of a Gaussian log (>= 10 KM/mol by default)
+molvib --input examples/logs/adenine_pcm_water.log --outdir figs
+
+# A single mode by index
+molvib --input examples/logs/adenine_pcm_water.log --modes 34 --outdir figs
+
+# A transition state — the imaginary mode is always kept
+molvib --input examples/logs/neg_test_H2SO4_V_freq.log --outdir figs
+
+# A whole directory at once (globs *.xyz, *.log, *.out)
+molvib --input examples/logs/ --ir-threshold 50 --outdir figs
 ```
 
-The program automatically:
+`examples/logs/` ships two ready-to-run logs: `adenine_pcm_water.log` (a converged
+minimum) and `neg_test_H2SO4_V_freq.log` (a transition state with one imaginary mode).
+`end_user_test.ipynb` is a runnable, assertion-checked walkthrough of both.
 
-1. Finds all XYZ files
-2. Reads atomic coordinates
-3. Detects chemical bonds
-4. Draws atoms as spheres
-5. Draws bonds as cylinders
-6. Draws vibrational displacement vectors
-7. Extracts vibrational frequency from the filename
-8. Saves a PNG image
+Output PNGs are named `{logstem}_mode{index:03d}_{freq:.1f}cm.png`; XYZ inputs keep the
+original `foo.xyz → foo.png` naming.
 
 ---
 
-## Gaussian 16 log support (`molvib`)
-
-In addition to `.xyz` files, the `molvib` package reads **Gaussian 16 frequency
-output** (`.log` / `.out`) directly, selects modes by **IR intensity**, renders a
-PNG per selected mode, and writes a **pandas CSV manifest**. The original
-`xyz_to_png.py` script is unchanged and continues to work.
-
-### Command line
-
-```bash
-molvib --input examples/logs/adenine_pcm_water.log
-# equivalent:
-python -m molvib --input examples/logs/adenine_pcm_water.log
-```
-
-Two example Gaussian logs ship in `examples/logs/`: `adenine_pcm_water.log` (a
-converged minimum) and `neg_test_H2SO4_V_freq.log` (a transition state with one
-imaginary mode). See `end_user_test.ipynb` for a runnable walkthrough of both.
-
-Common options:
+## Command-line options
 
 | Flag | Meaning |
 |---|---|
-| `--input` | file or directory (globs `*.xyz`, `*.log`, `*.out`) |
-| `--ir-threshold` | IR intensity cutoff in KM/Mole (default `10.0`) |
-| `--include-imaginary` / `--no-include-imaginary` | always keep imaginary modes (default: include) |
-| `--modes 1,27,39` | explicit mode indices; overrides the IR filter |
-| `--outdir` | output directory (default: alongside input) |
-| `--manifest` | manifest CSV path (default: `outdir/vibration_manifest.csv`) |
-| `--resolution 2000x2000` | output image size |
-| `--background transparent` | `transparent` or a color |
-| `--zoom 0.9` | camera zoom; `<1` adds margin so atoms and arrows are never cropped (default `0.9`) |
-| `--no-arrows` | hide displacement arrows |
-| `--no-render` | parse + select + write manifest without rendering PNGs |
+| `--input` | File or directory. Directories glob `*.xyz`, `*.log`, `*.out`. |
+| `--ir-threshold` | IR-intensity cutoff in KM/Mole (default `10.0`). |
+| `--include-imaginary` / `--no-include-imaginary` | Keep imaginary modes regardless of intensity (default: keep). |
+| `--modes 1,27,39` | Explicit mode indices; overrides the IR filter. |
+| `--outdir` | Output directory (default: alongside the input). |
+| `--manifest` | Manifest CSV path (default: `outdir/vibration_manifest.csv`). |
+| `--resolution 2000x2000` | Output image size. |
+| `--background transparent` | `transparent` or a color name/hex. |
+| `--zoom 0.9` | Camera zoom; `<1` adds margin so atoms and arrows are never cropped. |
+| `--no-arrows` | Hide displacement arrows. |
+| `--no-render` | Parse, select, and write the manifest without rendering PNGs (fast dry run). |
 
-Output PNGs are named `{logstem}_mode{index:03d}_{freq:.1f}cm.png` to avoid
-collisions across many modes. XYZ inputs keep the original `foo.xyz → foo.png`
-naming. Logs that fail validation are routed to a `vibration_bad_logs.csv`
-alongside the manifest rather than aborting the run.
+---
 
-### Gaussian 16 parsing policy
-
-`molvib` supports standard low-precision **Gaussian 16** frequency output only;
-HPModes/high-precision coordinates are not supported. For Link1 or concatenated
-files, it parses the **last complete frequency job**. An incomplete final job
-falls back to the preceding complete job. Every frequency block must contain an
-`Atom AN` header and exactly one complete displacement row per atom; malformed
-or truncated blocks are rejected and never rendered. Atomic jobs are rejected.
-Linear molecules are accepted when their geometry is collinear and they contain
-the expected `3N-5` modes; nonlinear molecules must contain `3N-6` modes.
-
-### Importable API
+## Python API
 
 ```python
 from molvib import read_any, select_modes
 from molvib.cli import render_file, render_directory
 
-# One DataFrame per file, or (manifest_df, bad_logs_df) for a directory:
-manifest_df = render_file("adenine_pcm_water.log", ir_threshold=10.0)
-manifest_df, bad_df = render_directory("logs/", ir_threshold=10.0)
+# Inspect a log without rendering
+geometry, modes = read_any("examples/logs/adenine_pcm_water.log")
+print(geometry.n_atoms, geometry.source_frame, len(modes))
+strong = select_modes(modes, ir_threshold=50.0)
+
+# Render one file -> manifest DataFrame
+manifest = render_file("examples/logs/adenine_pcm_water.log", outdir="figs", ir_threshold=50.0)
+
+# Render a directory -> (manifest_df, bad_logs_df); failures don't abort the batch
+manifest_df, bad_df = render_directory("examples/logs/", outdir="figs")
 ```
+
+Rendering parameters are a dataclass:
+
+```python
+from molvib.render import RenderSettings
+settings = RenderSettings(resolution=(3000, 3000), background="white", camera_zoom=1.0)
+render_file("mol.log", settings=settings)
+```
+
+### Manifest columns
+
+`source_log`, `png`, `mode_index`, `frequency_cm-1`, `ir_intensity_km/mol`,
+`reduced_mass_amu`, `is_imaginary`, `n_atoms`, `geometry_frame`, `rendered`.
+
+---
+
+## How Gaussian logs are parsed
+
+`molvib` supports **standard low-precision Gaussian 16** frequency output. Key
+behaviors and limits:
+
+- **Frame matching.** Geometry is read from the *last `Standard orientation` table
+  before the frequency section* — the frame in which Gaussian reports the normal
+  modes. Displacements and coordinates therefore share a frame, so arrows point
+  correctly. If only an `Input orientation` table is present it is used as a fallback
+  and recorded in the manifest's `geometry_frame` column.
+- **Mode count.** Nonlinear molecules must contain `3N−6` modes; collinear geometries
+  are accepted with `3N−5`. A mismatch is rejected.
+- **Concatenated / Link1 jobs.** The last complete frequency job is used; an incomplete
+  final job falls back to the preceding complete one.
+- **Strict validation.** Each block must have an `Atom AN` header and exactly one
+  complete displacement row per atom, and the block's atomic numbers must match the
+  orientation table. Malformed or truncated blocks are rejected and never rendered.
+  Atomic (single-atom) jobs are rejected.
+- **Not supported:** HPModes / high-precision coordinate blocks.
 
 ### A note on displacement semantics
 
-Gaussian's printed normal coordinates are **normalized Cartesian displacements**,
-not mass-weighted eigenvectors and not forces. (The original tool's `forces`
-variable name is a misnomer; in `molvib` these are called `displacements`.) The
-renderer normalizes them to the largest displacement purely for visualization —
-**arrow lengths are not physical amplitudes.** Geometry is taken from the *last
-`Standard orientation` table before the frequency section*, the frame in which
-the normal modes are reported, so arrows point along the correct bonds.
+Gaussian's printed normal coordinates are **normalized Cartesian displacements**, not
+mass-weighted eigenvectors and not forces. The renderer scales them to the largest
+displacement purely for visualization — **arrow lengths are not physical amplitudes.**
+(The original tool's `forces` variable was a misnomer; `molvib` calls these
+`displacements`.)
 
 ---
 
-## Adjustable Settings
+## XYZ input
 
-The following parameters can easily be modified inside the script.
+The `molvib` pipeline still accepts XYZ files, one atom per line:
 
-### Rendering
-
-```python
-OUTPUT_RESOLUTION = (2000, 2000)
-BACKGROUND = "transparent"
+```
+Element   X   Y   Z   dx   dy   dz
+C   0.000   0.000   0.000   0.12   0.03   0.00
+O   1.210   0.000   0.000  -0.10   0.02   0.01
 ```
 
-### Atom Size
+where `X Y Z` are coordinates (Å) and `dx dy dz` the displacement vector. The frequency
+label is taken from the filename (e.g. `m_165_3150.62.xyz`). The original standalone
+script remains available and batch-renders every XYZ in the working directory:
 
-```python
-ATOM_RADIUS = 0.28
-```
-
-### Bond Size
-
-```python
-BOND_RADIUS = 0.10
-```
-
-### Arrow Size
-
-```python
-ARROW_SHAFT_RADIUS = 0.05
-ARROW_TIP_RADIUS = 0.10
-ARROW_TIP_LENGTH = 0.25
-```
-
-### Show or Hide Force Vectors
-
-```python
-SHOW_ARROWS = True
+```bash
+python xyz_to_png.py
 ```
 
 ---
 
-## Scientific Applications
-
-This tool can be used for
-
-- Density Functional Theory (DFT)
-- Molecular vibrational analysis
-- Raman spectroscopy visualization
-- Infrared spectroscopy
-- Computational chemistry
-- Materials science
-- Molecular dynamics visualization
-
----
-
-## Output
-
-For every input file
-
-```
-molecule.xyz
-```
-
-the program automatically generates
-
-```
-molecule.png
-```
-
-at publication quality.
-
----
-
-## Repository Structure
+## Repository structure
 
 ```
 molecular-vibrations/
@@ -300,7 +206,7 @@ molecular-vibrations/
 │   ├── select.py               # IR-intensity / imaginary-mode selection
 │   ├── render.py               # PyVista rendering + RenderSettings
 │   ├── manifest.py             # pandas CSV manifest
-│   ├── elements.py             # Z→symbol, colors, covalent radii
+│   ├── elements.py             # Z→symbol, colors, covalent radii (H–Og)
 │   ├── model.py                # Geometry / Mode / RenderJob dataclasses
 │   └── cli.py                  # argparse driver + render_file/render_directory
 │
@@ -309,8 +215,8 @@ molecular-vibrations/
 │
 ├── examples/
 │   ├── logs/                   # example Gaussian 16 frequency logs
-│   └── *.xyz
-├── images/                     # reference/example PNGs
+│   └── *.xyz                   # example XYZ displacement files
+├── images/                     # showcase + reference renders
 ├── tests/
 │   ├── test_readers.py
 │   └── data/                   # parser fixtures
@@ -323,44 +229,48 @@ molecular-vibrations/
 
 ---
 
-## Future Improvements
+## Testing
 
-Planned features include
+```bash
+python -m pip install -e '.[test]'
+pytest                      # parser + selection unit tests
+```
 
-- Multiple lighting models
-- Custom camera angles
-- Automatic legends
-- Batch rendering options
-- Surface visualization
-- High-resolution publication presets
+Or open `end_user_test.ipynb` for an end-to-end check: it parses both example logs,
+asserts the expected atom/mode counts and the single imaginary mode of the transition
+state, renders the selected modes, and verifies the manifest. Every cell is an
+assertion, so a clean run validates parsing, frame matching, selection, and rendering
+together. On a headless machine, launch Jupyter under `xvfb-run`.
 
 ---
 
-## Citation
+## Scientific applications
 
-If this program contributes to your research, please cite this GitHub repository.
+DFT vibrational analysis, IR/Raman mode visualization, transition-state and
+imaginary-frequency diagnosis, teaching materials, and figures for papers and talks.
+
+## Roadmap
+
+- HPModes / high-precision coordinate support
+- Additional QM-code parsers (ORCA, VASP)
+- Custom camera angles and lighting presets
+- Optional legends and per-element labels
 
 ---
 
 ## License
 
-This project is distributed under the MIT License.
-
----
+MIT. See [LICENSE](LICENSE). The original copyright is retained as required.
 
 ## Authors
 
-**Original tool** — **Ashen Deemantha Liyanage**  
-PhD Student, Department of Physics and Astronomy  
-Bowling Green State University (BGSU) · Zayak's Lab  
-GitHub: https://github.com/ashendeema
+**Original tool** — **Ashen Deemantha Liyanage**, Zayak's Lab, Department of Physics and
+Astronomy, Bowling Green State University (BGSU). GitHub:
+[@ashendeema](https://github.com/ashendeema)
 
-**`molvib` Gaussian-log extension** — **Ish** ([@ishgits](https://github.com/ishgits))  
-Gaussian 16 frequency-log parsing, IR-intensity mode selection, CSV manifest, and CLI.
+**`molvib` Gaussian-log extension** — **Ish** ([@ishgits](https://github.com/ishgits)):
+Gaussian 16 frequency-log parsing, IR-intensity mode selection, fitted-camera
+rendering, CSV manifest, CLI, and test notebook.
 
----
-
-If you find this project useful, consider giving it a ⭐ on GitHub.
-
-# molecular-vibration-png-generator
-Python tool for generating publication-quality 3D molecular vibration images from XYZ files using PyVista.
+If this tool contributes to your research, please cite the repository and the original
+author.
