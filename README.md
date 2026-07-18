@@ -1,4 +1,4 @@
-https://doi.org/10.5281/zenodo.21423149.svg | https://doi.org/10.5281/zenodo.21423149
+https://doi.org/10.5281/zenodo.21423149
 
 # molvib: Molecular Vibration PNG Generator
 
