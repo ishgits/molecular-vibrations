@@ -10,11 +10,11 @@ Python API.
 
 <p align="center">
   <img src="images/showcase_adenine_1653.png" width="46%" alt="Adenine ring mode at 1653 cm-1">
-  <img src="images/showcase_h2so4_ts.png" width="46%" alt="H2SO4 transition-state imaginary mode">
+  <img src="images/showcase_h2so4_ts.png" width="46%" alt="H2SO4 imaginary mode">
 </p>
 <p align="center">
   <em>Left: adenine ring/NH₂ mode at 1653 cm⁻¹ (a minimum). Right: the −82 cm⁻¹
-  imaginary mode of an H₂SO₄ transition state — arrows trace the reaction coordinate.</em>
+  imaginary mode of an H₂SO₄ — arrows trace the reaction coordinate.</em>
 </p>
 
 > Fork of [ashendeema/molecular-vibration-png-generator](https://github.com/ashendeema/molecular-vibration-png-generator).
@@ -80,14 +80,14 @@ molvib --input examples/logs/adenine_pcm_water.log --outdir figs
 molvib --input examples/logs/adenine_pcm_water.log --modes 34 --outdir figs
 
 # A transition state — the imaginary mode is always kept
-molvib --input examples/logs/neg_test_H2SO4_V_freq.log --outdir figs
+molvib --input examples/logs/neg_test__V_freq.log --outdir figs
 
 # A whole directory at once (globs *.xyz, *.log, *.out)
 molvib --input examples/logs/ --ir-threshold 50 --outdir figs
 ```
 
 `examples/logs/` ships two ready-to-run logs: `adenine_pcm_water.log` (a converged
-minimum) and `neg_test_H2SO4_V_freq.log` (a transition state with one imaginary mode).
+minimum) and `neg_test__V_freq.log` (a transition state with one imaginary mode).
 `end_user_test.ipynb` is a runnable, assertion-checked walkthrough of both.
 
 Output PNGs are named `{logstem}_mode{index:03d}_{freq:.1f}cm.png`; XYZ inputs keep the
