@@ -3,6 +3,15 @@ __pycache__/
 *.py[cod]
 *.pyo
 
+# Packaging / build
+*.egg-info/
+build/
+dist/
+
+# Test & tooling caches
+.pytest_cache/
+.ipynb_checkpoints/
+
 # macOS
 .DS_Store
 
@@ -15,5 +24,18 @@ pyvista-env/
 .vscode/
 .idea/
 
-# Temporary files
+# Generated render output
+test_figs/
+fixcheck/
+*.png
+# ...but keep the committed example/reference images
+!images/*.png
+
+# Executed notebooks (large, embedded outputs)
+*_executed.ipynb
+
+# Gaussian / log files are ignored by default...
 *.log
+# ...but keep the committed example logs and test fixtures
+!examples/logs/*.log
+!tests/data/*.log

@@ -1,3 +1,2 @@
-numpy
-pyvista
-vtk
+# Runtime dependencies are declared in pyproject.toml.
+-e .
