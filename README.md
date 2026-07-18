@@ -1,4 +1,4 @@
-[![DOI](https://doi.org/10.5281/zenodo.21423149.svg)](https://doi.org/10.5281/zenodo.21423149)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21423149.svg)](https://doi.org/10.5281/zenodo.21423149)
 
 # molvib: Molecular Vibration PNG Generator
 
