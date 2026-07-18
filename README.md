@@ -1,4 +1,6 @@
-# molvib — Molecular Vibration PNG Generator
+https://doi.org/10.5281/zenodo.21423149.svg | https://doi.org/10.5281/zenodo.21423149
+
+# molvib: Molecular Vibration PNG Generator
 
 Publication-quality 3D renders of molecular vibrational modes, straight from
 **Gaussian 16 frequency logs** or **XYZ displacement files**.
